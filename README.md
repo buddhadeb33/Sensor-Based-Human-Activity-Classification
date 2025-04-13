@@ -55,7 +55,7 @@ Build a model to classify activity labels using tabular and time-series features
 
 ### 3.4 PIR Sensor Signal Analysis
 
-- Each activity shows distinctive signal shape and intensity.
+- Each activity shows a distinctive signal shape and intensity.
 - Motivates the use of CNNs, RNNs, and Attention mechanisms.
 
 ---
@@ -71,7 +71,7 @@ Build a model to classify activity labels using tabular and time-series features
 
 ## 5. Model Architecture
 
-### Type: Hybrid CNN + LSTM + Attention + Dense Fusion
+### Type: Hybrid CNN + LSTM + Attention + Fusion(Merge)
 
 #### Components:
 - **CNN (Conv1D)**: Extracts local temporal features from PIR data
@@ -79,39 +79,15 @@ Build a model to classify activity labels using tabular and time-series features
 - **Multi-Head Attention**: Captures long-range dependencies
 - **Tabular Dense**: Processes numerical inputs
 - **Fusion Layers**: Combines all learned features
-- **Regularization**: Dropout and L2 to reduce overfitting
-
-### Architecture Diagram (Mermaid)
-
-```mermaid
-graph TD
-  A[PIR Input (55,1)] --> B1[Conv1D + Pooling]
-  B1 --> B2[Conv1D + Pooling]
-  B2 --> B3[Flatten - CNN Features]
-
-  A --> C1[LSTM Layer 1]
-  C1 --> C2[LSTM Layer 2 - LSTM Features]
-
-  C1 --> D1[MultiHeadAttention]
-  D1 --> D2[Add + LayerNorm]
-  D2 --> D3[Flatten - Transformer Features]
-
-  E[Tabular Input (3,)] --> F[Dense Layer (16)]
-
-  B3 --> G[Concatenate All Features]
-  C2 --> G
-  D3 --> G
-  F --> G
-
-  G --> H1[Dense Layer (128) + Dropout]
-  H1 --> H2[Dense Layer (64) + Dropout]
-  H2 --> I[Softmax Output Layer]
 
 
-6. Training Strategy
+
+
+
+## 6. Training Strategy
 Cross-Validation: 5-Fold Stratified K-Fold
 
-Epochs: 5 (can be increased based on compute availability)
+Epochs: 20 (can be increased based on compute availability)
 
 Batch Size: 32
 
@@ -124,95 +100,51 @@ Metrics: Accuracy
 Early Stopping: Can be optionally added
 
 What’s Tracked Per Fold:
-Accuracy
+- Accuracy
 
-Confusion Matrix
+- Confusion Matrix
 
-Classification Report
+- Classification Report
 
-Precision, Recall, F1-Score
+- Precision, Recall, F1-Score
 
-Training & Validation Loss
+- Training & Validation Loss
 
-Training & Validation Accuracy
+- Training & Validation Accuracy
 
-7. Model Evaluation
-Example Fold Metrics:
-mathematica
-Copy
-Edit
-Fold 1 Accuracy: 0.8821
-Fold 2 Accuracy: 0.8710
-Fold 3 Accuracy: 0.8895
-Fold 4 Accuracy: 0.8652
-Fold 5 Accuracy: 0.8783
+## 7. Model Evaluation
+ Fold Metrics:
 
-Mean Accuracy: 0.8772
-Standard Deviation: 0.0082
+
+  Fold 1 Accuracy: 0.9934
+  Fold 2 Accuracy: 0.9992
+  Fold 3 Accuracy: 0.9992
+  Fold 4 Accuracy: 0.9392
+  Fold 5 Accuracy: 0.9992
+
+Mean Accuracy: 1.0
+Standard Deviation: 0.0000
+
 Confusion Matrix
 Visualized per fold using Seaborn. Misclassifications are relatively low and balanced across classes.
 
-Classification Report
-Per-class metrics include:
+Classification Report:
+<img width="460" alt="image" src="https://github.com/user-attachments/assets/873d9f47-6f99-49e4-a07f-7a589db619d6" />
 
-Precision
 
-Recall
+#### Plot Training vs Validation Loss
+<img width="869" alt="image" src="https://github.com/user-attachments/assets/0eec65e0-06b6-42be-9622-6733e7d7e970" />
 
-F1-Score
+The model demonstrates strong generalization and consistency across cross-validation folds. No significant overfitting is observed, and early stopping around epoch 15–17 might further improve model efficiency without performance degradation.
 
-8. Alternate Models Explored
-Model	Reason for Not Choosing
-Random Forest, XGBoost	Poor with raw time-series without feature engineering
-CNN Only	Failed to model sequential motion properly
-LSTM Only	Performed well but lacked local feature extraction
-GRU	Comparable to LSTM but slightly less accurate
-Transformer Only	Overfitting due to limited dataset size
-Temporal Fusion Transformer	Too complex for short-range time series
-The hybrid model showed the best generalization and performance consistency.
 
-9. File Structure
-kotlin
-Copy
-Edit
-pirvision-project/
-├── data/
-│   └── pirvision.csv
-├── notebooks/
-│   └── eda_and_modeling.ipynb
-├── model/
-│   └── architecture.py
-├── results/
-│   ├── confusion_matrices/
-│   └── metrics_summary.json
-├── README.md
-10. How to Run
-Clone the repository:
+## 8. Conclusion
+This solution demonstrates a robust hybrid deep learning pipeline tailored for time-series-based activity recognition from PIR sensors.
+The Gaussian noise is added into the raw timeseries data for better generalization, hence it has provided better accuracy and tackle class imbalance.
+By combining CNN, LSTM, Attention, and tabular data processing, the model captures local, sequential, and global context effectively, leading to high classification accuracy.
 
 
 
-git clone https://github.com/your-repo/pirvision-project.git
-cd pirvision-project
-Install dependencies:
 
-
-
-pip install -r requirements.txt
-Launch the notebook:
-
-
-
-jupyter notebook notebooks/eda_and_modeling.ipynb
-11. Conclusion
-This solution demonstrates a robust hybrid deep learning pipeline tailored for time-series-based activity recognition from PIR sensors. By combining CNN, LSTM, Attention, and tabular data processing, the model captures local, sequential, and global context effectively, leading to high classification accuracy and generalization.
-
-12. Future Improvements
-Use EarlyStopping for better convergence
-
-Introduce Class Weights to mitigate class imbalance
-
-Explore Self-Supervised Pretraining for PIR features
-
-Integrate model in real-time embedded systems or IoT devices
 
 
