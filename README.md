@@ -81,6 +81,104 @@ Build a model to classify activity labels using tabular and time-series features
 - **Fusion Layers**: Combines all learned features
 
 
+---
+
+# 📜 **Model Architecture Overview**
+
+This model is a **multi-input deep learning model** that combines:
+
+- **CNN** for local feature extraction from PIR sensor time-series.
+- **LSTM + Transformer Attention** for capturing temporal dependencies in the PIR sequence.
+- **Dense (MLP)** for handling auxiliary **tabular features** (like room temperature, humidity, etc.).
+- **Merged Fusion** of all streams to perform final classification.
+
+The purpose is to detect the presence or absence of a person (or other fine-grained activities) from **PIR + tabular features**.
+
+---
+
+# 🏛 **Detailed Component Breakdown**
+
+## 1. **Inputs**
+- **PIR Input:** `(timesteps, 1)` shaped sequence (e.g., 50 timestamps with 1 PIR sensor reading each).
+- **Tabular Input:** `(3,)` shaped vector (e.g., 3 features like temperature, humidity, or other environmental factors).
+
+---
+
+## 2. **PIR Processing (Time Series Pathway)**
+
+### ➡️ CNN Branch
+- **Conv1D Layer (64 filters, kernel size=3):** Captures **local patterns** (small changes over adjacent PIR values).
+- **MaxPooling1D:** Downsamples the time dimension to reduce computation and learn more abstract features.
+- **Conv1D Layer (128 filters, kernel size=3):** Extracts **higher-level patterns** from already pooled features.
+- **MaxPooling1D:** Further reduces dimensionality.
+- **Flatten:** Prepares CNN output for merging later.
+
+> This CNN branch **extracts spatial features** from the PIR sequence.
+
+---
+
+### ➡️ LSTM + Transformer Branch
+- **First LSTM (64 units, `return_sequences=True`):** Captures temporal dependencies across PIR readings.
+- **Second LSTM (32 units):** Summarizes sequence into a **compact temporal encoding**.
+- **Multi-Head Attention (2 heads):** Provides **attention over time** — learns where in the sequence important changes occur.
+- **Add & LayerNormalization:** Residual connection to stabilize training.
+- **Flatten:** Prepares attention output for fusion.
+
+> This LSTM + Transformer branch **captures sequence dynamics + focuses on important timestamps**.
+
+---
+
+## 3. **Tabular Data Processing**
+- **Dense(16 units, ReLU activation):** Small neural net to learn embeddings from auxiliary tabular features.
+
+> This branch **processes static features** that complement the dynamic PIR sensor readings.
+
+---
+
+## 4. **Merging Streams**
+- **Concatenate:** CNN features + LSTM output + Attention output + Tabular features.
+- **Dense(128 units + Dropout 0.3):** Fully connected layer to blend features together.
+- **Dense(64 units + Dropout 0.3):** Further compression and regularization.
+- **Final Dense layer:** Softmax layer for multi-class classification (`len(np.unique(y))` classes, like No Presence, Light Presence, Heavy Movement).
+
+---
+
+# ⚙️ **Training Details**
+- **Loss Function:** `sparse_categorical_crossentropy` (labels are integer encoded, not one-hot).
+- **Optimizer:** Adam.
+- **Metrics:** Accuracy.
+
+---
+
+# 🧠 **Why This Architecture is Smart for FoG Presence Detection?**
+- **CNN** quickly detects sharp changes in PIR activity (someone moving across the field).
+- **LSTM** captures the sequential nature of presence (e.g., someone slowly moving or standing still).
+- **Transformer Attention** adds ability to focus on **important motion events**.
+- **Tabular MLP** adds non-PIR clues like ambient conditions.
+- **Fusion** makes the model very **robust** to different sensor behaviors, environment conditions, and user activities.
+
+---
+
+# 📊 **Evaluation Strategy**
+- **5-Fold Stratified K-Fold Cross Validation**: Ensures balanced testing across multiple runs.
+- **Metrics Tracked:** Accuracy, Macro F1-Score, Class-wise reports, Confusion Matrices.
+
+---
+
+# 🖼️ **Diagram Sketch (high-level)**
+
+```
+    PIR Input → CNN → Flatten → 
+                       \
+    PIR Input → LSTM → LSTM → Transformer Attention → Flatten
+                       /
+    Tabular Input → Dense → 
+
+(Merge CNN + LSTM + Attention + Tabular) → Dense → Dense → Output
+```
+
+
+
 
 
 
